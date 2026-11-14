@@ -38,10 +38,14 @@
         const sizeLabel = root.querySelector(".sr-size-label");
         const listEl = root.querySelector(".sr-list");
         const splitCountInput = root.querySelector(".sr-split-count");
+        const btnAdd = root.querySelector(".sr-btn-add");
         const btnSplitH = root.querySelector(".sr-btn-split-h");
         const btnSplitV = root.querySelector(".sr-btn-split-v");
         const btnSync = root.querySelector(".sr-btn-sync");
         const btnClear = root.querySelector(".sr-btn-clear");
+        const bgFileInput = root.querySelector(".sr-bg-file");
+        const btnBgI2i = root.querySelector(".sr-btn-bg-i2i");
+        const btnBgClear = root.querySelector(".sr-btn-bg-clear");
 
         const prefix = tab === "t2i" ? "txt2img" : "img2img";
         const widthInput = () =>
@@ -52,6 +56,8 @@
         let regions = [];
         let selectedIdx = -1;
         let dragState = null; // { mode: 'draw'|'move'|'resize', idx, corner, startX, startY, orig }
+        let bgImage = null;
+        let bgObjectUrl = null;
 
         function syncToGradio() {
             const box = document.querySelector(
@@ -89,6 +95,13 @@
             const ch = canvas.height;
 
             ctx.clearRect(0, 0, cw, ch);
+
+            if (bgImage) {
+                ctx.save();
+                ctx.globalAlpha = 0.45;
+                ctx.drawImage(bgImage, 0, 0, cw, ch);
+                ctx.restore();
+            }
 
             // Subtle grid
             ctx.strokeStyle = "rgba(128, 128, 128, 0.18)";
@@ -449,6 +462,29 @@
             renderList();
         }
 
+        if (btnAdd) {
+            btnAdd.addEventListener("click", () => {
+                const offset = (regions.length % 5) * 0.05;
+                const x1 = Number(Math.min(0.55, 0.2 + offset).toFixed(3));
+                const y1 = Number(Math.min(0.55, 0.2 + offset).toFixed(3));
+                const x2 = Number(Math.min(0.95, x1 + 0.4).toFixed(3));
+                const y2 = Number(Math.min(0.95, y1 + 0.4).toFixed(3));
+                regions.push({
+                    x1,
+                    y1,
+                    x2,
+                    y2,
+                    prompt: "",
+                    weight: 1.0,
+                });
+                selectedIdx = regions.length - 1;
+                syncToGradio();
+                drawCanvas();
+                renderList();
+                listEl.scrollTop = listEl.scrollHeight;
+            });
+        }
+
         btnSplitH.addEventListener("click", () => {
             updateCanvasSize();
             applySplit(true);
@@ -469,6 +505,65 @@
             syncToGradio();
             drawCanvas();
             renderList();
+        });
+
+        function clearBackground() {
+            if (bgObjectUrl) {
+                URL.revokeObjectURL(bgObjectUrl);
+                bgObjectUrl = null;
+            }
+            bgImage = null;
+            if (bgFileInput) bgFileInput.value = "";
+            drawCanvas();
+        }
+
+        function setBackgroundFromSrc(src, objectUrl = null) {
+            if (!src) return;
+            const img = new Image();
+            img.onload = () => {
+                if (bgObjectUrl && bgObjectUrl !== objectUrl) {
+                    URL.revokeObjectURL(bgObjectUrl);
+                }
+                bgObjectUrl = objectUrl;
+                bgImage = img;
+                drawCanvas();
+            };
+            img.src = src;
+        }
+
+        function loadBackgroundFile(file) {
+            if (!file || !file.type.startsWith("image/")) return;
+            const url = URL.createObjectURL(file);
+            setBackgroundFromSrc(url, url);
+        }
+
+        if (bgFileInput) {
+            bgFileInput.addEventListener("change", (e) => {
+                const file = e.target.files && e.target.files[0];
+                loadBackgroundFile(file);
+            });
+        }
+
+        if (btnBgI2i) {
+            btnBgI2i.addEventListener("click", () => {
+                const i2iImg = document.querySelector("#img2img_image img");
+                if (i2iImg && i2iImg.src) {
+                    setBackgroundFromSrc(i2iImg.src);
+                }
+            });
+        }
+
+        if (btnBgClear) {
+            btnBgClear.addEventListener("click", clearBackground);
+        }
+
+        canvas.addEventListener("dragover", (e) => {
+            e.preventDefault();
+        });
+        canvas.addEventListener("drop", (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+            loadBackgroundFile(file);
         });
 
         // Watch width/height changes (both number and range inputs)

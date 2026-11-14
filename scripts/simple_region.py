@@ -9,10 +9,25 @@ from lib_simple_region.attention import SimpleAttentionCouple
 from modules import scripts
 from modules.prompt_parser import SdConditioning
 
+try:
+    from lib_simple_region.anima import SimpleAnimaCouple
+
+    HAS_ANIMA = True
+except ImportError:
+    SimpleAnimaCouple = None
+    HAS_ANIMA = False
+
 if TYPE_CHECKING:
     from modules.processing import StableDiffusionProcessing as P
 
 logger = logging.getLogger("SimpleRegion")
+
+
+def _is_anima(sd_model) -> bool:
+    if not HAS_ANIMA:
+        return False
+    repo = getattr(getattr(sd_model, "model_config", None), "huggingface_repo", "") or ""
+    return sd_model.__class__.__name__ == "Anima" or repo.endswith("Anima")
 
 
 def _encode_prompt(sd_model, text: str, width: int, height: int) -> torch.Tensor:
@@ -22,7 +37,9 @@ def _encode_prompt(sd_model, text: str, width: int, height: int) -> torch.Tensor
         return cond["crossattn"]
     if getattr(sd_model, "is_sd1", False):
         return cond
-    raise NotImplementedError("Simple Region currently supports SDXL and SD1.5 models.")
+    if _is_anima(sd_model):
+        return cond[0][0]
+    raise NotImplementedError("Simple Region currently supports SDXL, SD1.5, and Anima models.")
 
 
 def _parse_regions(regions_json: str) -> list[dict]:
@@ -78,6 +95,12 @@ class SimpleRegion(scripts.Script):
         self.is_img2img = is_img2img
         tab = "i2i" if is_img2img else "t2i"
 
+        i2i_bg_btn = (
+            '<button type="button" class="sr-btn sr-btn-bg-i2i">i2iから取得</button>'
+            if is_img2img
+            else ""
+        )
+
         with gr.Accordion("Simple Region", open=False, elem_id=f"sr_{tab}_accordion"):
             with gr.Row():
                 enable = gr.Checkbox(
@@ -109,6 +132,7 @@ class SimpleRegion(scripts.Script):
                 f"""
                 <div id="sr_{tab}_root" class="sr-root" data-tab="{tab}">
                     <div class="sr-toolbar">
+                        <button type="button" class="sr-btn sr-btn-add">+ 範囲追加</button>
                         <label class="sr-split-label">
                             分割数
                             <input type="number" class="sr-split-count" min="2" max="8" value="2" />
@@ -123,6 +147,14 @@ class SimpleRegion(scripts.Script):
                         <div class="sr-canvas-wrap">
                             <canvas class="sr-canvas" width="384" height="384"></canvas>
                             <div class="sr-size-label"></div>
+                            <div class="sr-bg-controls">
+                                <label class="sr-btn sr-btn-sm">
+                                    背景画像
+                                    <input type="file" accept="image/*" class="sr-bg-file" hidden />
+                                </label>
+                                {i2i_bg_btn}
+                                <button type="button" class="sr-btn sr-btn-sm sr-btn-bg-clear">背景クリア</button>
+                            </div>
                         </div>
                         <div class="sr-list"></div>
                     </div>
@@ -138,6 +170,16 @@ class SimpleRegion(scripts.Script):
 
     def before_hr(self, p: "P", *args, **kwargs):
         self.is_hr = True
+        if HAS_ANIMA and _is_anima(p.sd_model):
+            SimpleAnimaCouple.unpatch()
+
+    def before_process_batch(self, p: "P", *args, **kwargs):
+        if HAS_ANIMA and _is_anima(p.sd_model):
+            SimpleAnimaCouple.unpatch()
+
+    def postprocess(self, p: "P", processed, *args):
+        if HAS_ANIMA:
+            SimpleAnimaCouple.unpatch()
 
     def after_extra_networks_activate(
         self,
@@ -185,12 +227,14 @@ class SimpleRegion(scripts.Script):
         if getattr(p, "_ad_inner", False):
             return
 
+        is_anima = _is_anima(p.sd_model)
         if not (
             getattr(p.sd_model, "is_sdxl", False)
             or getattr(p.sd_model, "is_sd1", False)
+            or is_anima
         ):
             logger.warning(
-                "Simple Region currently supports SDXL / SD1.5 models only. Skipping."
+                "Simple Region currently supports SDXL / SD1.5 / Anima models only. Skipping."
             )
             return
 
@@ -229,6 +273,11 @@ class SimpleRegion(scripts.Script):
             mask_list.append(mask)
 
         unet = p.sd_model.forge_objects.unet
-        p.sd_model.forge_objects.unet = SimpleAttentionCouple.patch_unet(
-            unet, cond_list, mask_list
-        )
+        if is_anima:
+            p.sd_model.forge_objects.unet = SimpleAnimaCouple.patch_dit(
+                unet, cond_list, mask_list, width, height
+            )
+        else:
+            p.sd_model.forge_objects.unet = SimpleAttentionCouple.patch_unet(
+                unet, cond_list, mask_list
+            )

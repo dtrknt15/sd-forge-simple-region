@@ -99,6 +99,19 @@ body.dark .sr-btn-danger {
     font-family: monospace;
 }
 
+.sr-bg-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 2px;
+}
+
+.sr-btn-sm {
+    padding: 3px 9px;
+    font-size: 12px;
+}
+
 .sr-list {
     flex: 1 1 280px;
     display: flex;
