@@ -1,0 +1,217 @@
+.sr-root {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 6px 2px;
+}
+
+.sr-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.sr-split-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--body-text-color, #e5e7eb);
+}
+
+.sr-split-count {
+    width: 56px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color-primary, #6b7280);
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    font-size: 13px;
+}
+
+body.dark .sr-split-count {
+    background-color: #111827 !important;
+    color: #f9fafb !important;
+    border-color: #4b5563 !important;
+}
+
+.sr-btn {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color-primary, #4b5563);
+    background: var(--button-secondary-background-fill, #374151);
+    color: var(--button-secondary-text-color, #f9fafb);
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.sr-btn:hover {
+    opacity: 0.85;
+}
+
+.sr-btn-danger {
+    border-color: rgba(239, 68, 68, 0.6);
+    color: #dc2626;
+}
+
+body.dark .sr-btn-danger {
+    color: #fca5a5;
+}
+
+.sr-hint {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-left: auto;
+}
+
+.sr-workspace {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.sr-canvas-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.sr-canvas {
+    border: 1px solid var(--border-color-primary, #4b5563);
+    border-radius: 6px;
+    background: repeating-conic-gradient(
+            rgba(128, 128, 128, 0.08) 0% 25%,
+            transparent 0% 50%
+        )
+        50% / 16px 16px;
+    cursor: crosshair;
+    user-select: none;
+}
+
+.sr-size-label {
+    font-size: 12px;
+    opacity: 0.75;
+    font-family: monospace;
+}
+
+.sr-list {
+    flex: 1 1 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 410px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.sr-empty {
+    padding: 20px;
+    border: 1px dashed var(--border-color-primary, #4b5563);
+    border-radius: 6px;
+    font-size: 13px;
+    opacity: 0.75;
+    text-align: center;
+}
+
+.sr-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color-primary, #4b5563);
+    border-left-width: 4px;
+    border-radius: 6px;
+    background: var(--background-fill-secondary, rgba(31, 41, 55, 0.5));
+}
+
+.sr-card.is-selected {
+    box-shadow: 0 0 0 1px var(--color-accent, #60a5fa);
+}
+
+.sr-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sr-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.sr-coords {
+    font-size: 11px;
+    font-family: monospace;
+    opacity: 0.75;
+}
+
+.sr-btn-del {
+    margin-left: auto;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--body-text-color, #d1d5db);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.sr-btn-del:hover {
+    background: rgba(239, 68, 68, 0.25);
+    color: #fca5a5;
+}
+
+.sr-prompt {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color-primary, #6b7280);
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    font-size: 13px;
+    resize: vertical;
+}
+
+.sr-prompt::placeholder {
+    color: #6b7280 !important;
+    opacity: 1;
+}
+
+body.dark .sr-prompt {
+    background-color: #111827 !important;
+    color: #f9fafb !important;
+    border-color: #4b5563 !important;
+}
+
+body.dark .sr-prompt::placeholder {
+    color: #9ca3af !important;
+}
+
+.sr-weight-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sr-weight-label {
+    font-size: 12px;
+    font-family: monospace;
+    min-width: 72px;
+}
+
+.sr-weight-slider {
+    flex: 1;
+    cursor: pointer;
+}
