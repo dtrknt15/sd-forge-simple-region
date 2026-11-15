@@ -6,6 +6,7 @@ import gradio as gr
 import torch
 
 from lib_simple_region.attention import SimpleAttentionCouple
+from lib_simple_region.moss import build_moss_layout_json
 from modules import scripts
 from modules.prompt_parser import SdConditioning
 
@@ -28,6 +29,12 @@ def _is_anima(sd_model) -> bool:
         return False
     repo = getattr(getattr(sd_model, "model_config", None), "huggingface_repo", "") or ""
     return sd_model.__class__.__name__ == "Anima" or repo.endswith("Anima")
+
+
+def _is_moss_image(sd_model) -> bool:
+    return getattr(sd_model, "__class__", None) is not None and (
+        sd_model.__class__.__name__ == "MOSSImage"
+    )
 
 
 def _encode_prompt(sd_model, text: str, width: int, height: int) -> torch.Tensor:
@@ -202,6 +209,27 @@ class SimpleRegion(scripts.Script):
         if not regions:
             return
 
+        if _is_moss_image(p.sd_model):
+            width = int(p.width)
+            height = int(p.height)
+            prompt_list = kwargs.get("prompts")
+            if isinstance(prompt_list, list):
+                for idx, base in enumerate(prompt_list):
+                    prompt_list[idx] = build_moss_layout_json(base, regions, width, height)
+            if isinstance(getattr(p, "all_prompts", None), list):
+                for idx, base in enumerate(p.all_prompts):
+                    p.all_prompts[idx] = build_moss_layout_json(
+                        base, regions, width, height
+                    )
+            p.extra_generation_params.update(
+                {
+                    "SimpleRegion_Enable": True,
+                    "SimpleRegion_MossLayout": True,
+                    "SimpleRegion_Regions": json.dumps(regions, ensure_ascii=False),
+                }
+            )
+            return
+
         p.extra_generation_params.update(
             {
                 "SimpleRegion_Enable": True,
@@ -225,6 +253,9 @@ class SimpleRegion(scripts.Script):
             return
 
         if getattr(p, "_ad_inner", False):
+            return
+
+        if _is_moss_image(p.sd_model):
             return
 
         is_anima = _is_anima(p.sd_model)

@@ -25,6 +25,15 @@
 - SDXL 系（Illustrious / Pony 等）
 - SD 1.5 系
 - Anima 系（Forge Neo）
+- MOSS-Image 系（Forge Neo：純正レイアウト JSON へ自動変換）
+
+### MOSS-Image での記法（任意）
+
+MOSS-Image 使用時は、通常プロンプト欄が `summary.caption`、各領域が `items` に自動変換されます（重み・引き継ぎ設定は無視されます）。領域プロンプトの先頭に以下を付けると `label` を指定できます：
+
+- `char: 説明` / `character: 説明` → `character`
+- `text:"表示したい文字" 説明` → `text`（文字描画用）
+- 指定なし → `object`
 
 ## インストール方法
 
